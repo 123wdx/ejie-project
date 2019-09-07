@@ -1,10 +1,193 @@
+	<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
 <style>
-	
+		.table{
+			border-collapse: collapse;
+			width: 100%;
+			text-align: center;
+		}
+		.table td{
+			border: 1px solid #ccc;
+			line-height: 2em;
+		}
+		.table tr.current{
+			background: #ededed;
+		}
+		.none{
+			display: none;
+		}
+		.btn{
+			padding: .5em 1em;
+			border-radius: 3px;
+			background: #1758be;
+			color: #ededed;
+			cursor: pointer;
+			display: inline-block;	
+		}
+		.btns{
+			margin-bottom: .5em;
+
+		}
 </style>
-<script>
-	
-</script>
 
 <div class="customer">
-	<div>订单管理</div>
+	<h2>订单管理</h2>
+	<div class="btns">
+		<div id="btn_add" class="btn">添加</div>
+	<div id="btn_import" class="btn">批量导入</div>
+	<div id="btn_delete" class="btn">批量删除</div>
+	</div>
+	<div style="margin-bottom: .5em">
+		<form action="javascript:void(0)">
+			<input type="hidden" name="id" />
+			服务数量<input type="text" name="total" />
+			服务 <input type="text" name="waiterId"  />
+			顾客id<input type="text" name="customerId" />
+			服务地址id <input type="text" name="addressId"  />
+			<input type="submit" value="提交">
+		</form>
+	</div>
+	<table class="table">
+		<thead>
+		<tr>
+			<td width="80px">编号</td>
+			<td>服务数量</td>
+			<td>服务</td>
+			<td>顾客id</td>
+			<td>服务地址id</td>
+			<td width="100px">操作</td>
+		</tr>
+		</thead>
+		<tbody>
+			<tr class="none">
+				<td ><input type="checkbox"></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td>
+					<a class ="btn_del" href="#">删除</a>
+					<a  class="btn_upd" href="#">修改</a>
+				</td>
+			</tr>
+			
+		</tbody>
+	</table>
 </div>
+
+<script>
+	var baseURL="http://134.175.154.93:6677";
+	// 给添加按钮绑定事件
+	//通过id获取添加事件
+		var btn_add=document.getElementById("btn_add");
+	//通过tagname获取tbody
+		var tbody = document.getElementsByTagName("tbody")[0];
+	// 	//为表单绑定事件
+		document.forms[0].onsubmit=function(event){
+			//1.获取用户的输入
+			var id = document.querySelector("input[name=id]").value;
+			var total=document.querySelector("input[name=total]").value;
+			var waiterId=document.querySelector("input[name=waiterId]").value;
+			var customerId=document.querySelector("input[name=customerId]").value;
+			var addressId=document.querySelector("input[name=addressId]").value;
+			//2,异步提交给后台
+			var url=baseURL+"/order/insertOrder";
+			var data;
+		if(id){
+	
+			data="id="+id+"&total="+total+"&waiterId="+waiterId+"&customerId="+customerId+"&addressId="+addressId;
+		}else {
+			data="total="+total+"&waiterId="+waiterId+"&customerId="+customerId+"&addressId="+addressId;
+		}
+			$.post(url,data,function(a){
+
+				reloadData();
+			})
+
+		//3.页面的布局更新
+		event.preventDefault();
+	}
+	// 给添加按钮绑定事件
+		btn_add.onclick = function(){
+			document.querySelector("input[name=addressId]").value = "";
+			document.querySelector("input[name=customerId]").value = "";
+			document.querySelector("input[name=waiterId]").value = "";
+			document.querySelector("input[name=total]").value = "";
+			document.querySelector("input[name=id]").value = "";
+			
+		}
+		//当光标移动到某一行上,就为这一行添加背景
+		 tbody.onmouseover=function(event){
+		 	var target=event.target;
+			if (target.nodeName==="TD") {
+		 		target.parentNode.className="current"
+			}
+		}
+		tbody.onmouseout=function(event){
+			var target=event.target;
+			if (target.nodeName==="TD") {
+				target.parentNode.className=""
+			}
+		}
+		
+		//给删除按钮绑定事件
+		tbody.onclick=function(event){
+			if(event.target.nodeName==="A"){
+				switch(event.target.className){
+					case "btn_del":
+					//1.先获取删除的id
+
+					var id=event.target.parentNode.parentNode.firstElementChild.firstElementChild.value;
+					//2.编写ajax
+					var url=baseURL+"/order/deleteOrderById";
+					var data="id="+id;
+					$.post(url,data,function(a){
+						reloadData();
+					})
+						break;
+						case "btn_upd":
+						var id = event.target.parentNode.parentNode.children[0].firstElementChild.value;
+						var total = event.target.parentNode.parentNode.children[1].innerText;
+						var waiterId = event.target.parentNode.parentNode.children[2].innerText;
+						var customerId = event.target.parentNode.parentNode.children[1].innerText;
+						var addressId = event.target.parentNode.parentNode.children[2].innerText;
+						document.querySelector("input[name=addressId]").value = addressId;
+						document.querySelector("input[name=customerId]").value = customerId;
+						document.querySelector("input[name=waiterId]").value = waiterId;
+						document.querySelector("input[name=total]").value = total;
+						document.querySelector("input[name=id]").value = id;
+
+						break;
+				}
+
+			}
+		}
+		
+		//重载数据
+		function reloadData(){
+			//1.通过ajax获取后台数据
+			var url=baseURL+"/order/findAllOrder";
+			$.get(url,function(a){
+				Array.prototype.slice.call(tbody.children,0).forEach(function(item,index){
+							if(index !== 0 ){
+								tbody.removeChild(item)
+
+							}
+			})
+				//将查询到的数据渲染到页面上
+				a.data.forEach(function(item){
+					// 创建一个tr将数据添加到tr上,
+				var newTr=tbody.firstElementChild.cloneNode(true);
+					newTr.children[0].firstElementChild.value=item.id;
+					newTr.children[1].innerText=item.total;
+					 newTr.children[2].innerText=item.waiterId;
+					newTr.children[3].innerText=item.customerId;
+					newTr.children[4].innerText=item.addressId;
+					newTr.setAttribute("class","");
+					tbody.appendChild(newTr)
+						})
+					})
+		}
+		//调用重载方法
+		reloadData();
+
+</script>
