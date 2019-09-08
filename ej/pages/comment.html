@@ -1,10 +1,181 @@
-<style>
-	
-</style>
-<script>
-	
-</script>
+<!-- <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script> -->
 
-<div class="customer">
-	<div>评论管理</div>
+<link rel="stylesheet" href="./css/customer.css">
+
+<div class="comment">
+
+	<h2>评价管理</h2>
+	<!-- 注释节点 -->
+	<div class="btns">
+		<div id="btn_add" class="btn">添加评论</div>
+	    <div style="margin: .5em 1em">
+			<!-- 表单 -->
+			<form action="javascript:void(0)">
+			    <input type="hidden" name="id"/>
+				评论内容: <input type="text" name="content"/>
+				评论时间: <input type="text" name="commentTime"/>
+				订单Id: <input type="text" name="orderId"/>
+				<input type="submit" value="提交"/>
+			</form>
+		</div>
+		<div id="btn_add" class="btn">查询所有评论</div><br>
+	    <div style="margin: .5em 1em">
+			<form action="javascript:void(0)">
+				<input type="hidden" name="id"/>
+				通过订单Id查询评论: <input type="search" name="orderId">
+				<input type="submit" value="提交">
+			</form>
+	    </div>
+	</div>
+
+	<table class="table">
+		<thead>
+			<tr>
+				<td width="80px">评论编号</td>
+				<td>内容</td>
+				<td>评论时间</td>
+				<td>订单编号</td>
+				<td width="100px">操作</td>
+			</tr>
+		</thead>
+		<tbody>
+			<tr class="none">
+				<td><input type="checkbox"></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td>
+				 	<a class="btn_del" href="#">删除</a>
+				 	<a class="btn_upd" href="#">修改</a>
+				</td>
+		 		</tr>
+		</tbody>
+	</table>
+
+	<script>
+		var baseURL = "http://134.175.154.93:6677"
+		var btn_add = document.getElementById("btn_add"); 
+		var btn_dels = document.getElementById("btn_dels"); 
+		var btn_del = document.getElementById("btn_del"); 
+		var btn_upd = document.getElementById("btn_upd"); 
+		var tbody = document.getElementsByTagName("tbody")[0];
+		
+		//为表单绑定事件
+		document.forms[0].onsubmit = function(event) {
+			//1.获取用户的输入
+			var id = document.querySelector("input[name=id]").value;
+			var content = document.querySelector("input[name=content]").value;
+			var commentTime = document.querySelector("input[name=commentTime]").value;
+			var orderId = document.querySelector("input[name=orderId]").value;
+			//异步提交给后台
+			var url = baseURL+"/comment/insertComment";
+			var data;
+			if (id) {
+				data= "id="+id+"&content="+content+"&commentTime="+commentTime+"&orderId="+orderId;
+			} else {
+				data= "content="+content+"&commentTime="+commentTime+"&orderId="+orderId;
+			}
+
+			$.post(url,data,function(response){
+				console.log(response.message);
+				reloadData();
+			})
+
+			//3.页面的局部更新
+
+			// alert(1);
+			event.preventDefault();
+		}
+
+		//给添加按钮绑定事件
+		btn_add.onclick = function() {
+			document.querySelector("input[name=id]").value = "";
+					document.querySelector("input[name=content]").value = "";
+					document.querySelector("input[name=commentTime]").value = "";
+					document.querySelector("input[name=orderId]").value = "";
+		}
+
+		//当光标移动到某一行上,为这一行添加背景
+		tbody.onmouseover = function(event) {
+			if(event.target.nodeName === "TD") {
+				event.target.parentNode.className = "current";
+			}
+		}
+
+		//当光标移出到某一行上,为这一取消行背景
+		tbody.onmouseout = function(event) {
+			if(event.target.nodeName === "TD") {
+				event.target.parentNode.className = "";
+			}
+		}
+		//
+
+		//给删除按钮绑定事件
+		tbody.onclick = function(event) {
+			if(event.target.nodeName ==="A") {
+				switch(event.target.className) {
+					case "btn_del":
+					//1.先获取要删除的id
+					var id = event.target.parentNode.parentNode.firstElementChild.firstElementChild.value;
+					alert(id);
+
+					//2.编写ajax进行删除
+					var url = baseURL+"/comment/deleteCommentById";
+					var data = "id="+id;
+					$.post(url,data,function(response){
+						console.log(response.message);
+						reloadData();
+					}) 
+					break;
+					case "btn_upd":
+					var id = event.target.parentNode.parentNode.children[0].firstElementChild.value;
+					var content = event.target.parentNode.parentNode.children[1].innerText;
+					var commentTime = event.target.parentNode.parentNode.children[2].innerText;
+					var orderId = event.target.parentNode.parentNode.children[3].innerText;
+					document.querySelector("input[name=id]").value = id;
+					document.querySelector("input[name=content]").value = content;
+					document.querySelector("input[name=commentTime]").value = commentTime;
+					document.querySelector("input[name=orderId]").value = orderId;
+
+					break;
+				}
+			}
+		}
+
+
+		//重新加载数据
+		function reloadData() {
+			//1.通过ajax获取后台数据
+			var url = baseURL+"/comment/queryBasic";
+			$.get(url,function(response){
+				// console.log(response);
+
+
+				//渲染之前先将tbody中原有的数据删除
+				Array.prototype.slice.call(tbody.children,0).forEach(function(item,index) {
+						// console.log(item);
+						if(index !== 0) {
+							tbody.removeChild(item);
+						}
+				})
+			  
+				//2.将查询到的数据渲染到页面中
+				response.data.forEach(function(item,index) {
+					// console.log(item);
+				//2.1创建一个tr,然后将数据添加到tr中
+					var newTr = tbody.firstElementChild.cloneNode(true);
+					newTr.children[0].firstElementChild.value = item.id;
+					newTr.children[1].innerText = item.content;
+					newTr.children[2].innerText = item.commentTime;
+					newTr.children[3].innerText = item.orderId;
+					newTr.setAttribute("class","");
+					//2.2将tr追加到tbody中
+					tbody.appendChild(newTr);
+				    })
+
+			})
+		}
+		//调用重载数据方法
+		reloadData();
+	</script>
 </div>
