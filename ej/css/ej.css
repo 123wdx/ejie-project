@@ -48,7 +48,7 @@ html,body,.container {
 	
 	background-color: #ffffff;
 	height: 100%;
-	padding-bottem: 20em;
+	padding-bottom: 20em;
 	box-sizing: border-box;
 	
 }
@@ -58,4 +58,13 @@ html,body,.container {
 	margin-bottom: .5em;
 	background-color: #1758be;
 	
+}
+.container > .right >.content >.mb_nav >a{
+	font-size: 14px;
+	color: #fff;
+	margin-left: 30px;
+}
+.container > .right >.content >.mb_nav >a.current{
+	background-color: #ededed;
+	color: #333;
 }
