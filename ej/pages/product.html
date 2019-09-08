@@ -1,10 +1,196 @@
 <style>
-	
-</style>
-<script>
-	
-</script>
+	.btns {
+		margin-bottom: 5px;
+	}
+	.btn {
+		display: inline-block;
+		padding: .3em 1.2em;
+		border-radius: 3px;
+		border:1px solid #ccc;
+		color: #fff;
+		cursor :pointer;
+		background-color: #006699;
+	}
+	table.table {
+		box-sizing: border-box;
+		width: 100%;
+		border-collapse: collapse;
+	}
+	table.table td ,
+	table.table th {
+		border: 1px solid #ccc;
+		line-height: 2em;
+		text-align: center;
+	}
 
-<div class="customer">
-	<div>产品管理</div>
+	table.table tr.current {
+		background-color: #ededed;
+	}
+
+	.none {
+		display: none;
+	}
+</style>
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<script>
+	var baseURL = "http://134.175.154.93:6677";
+	// 初始化数据
+function initData(){
+	var url = "/product/findAllProduct"
+	$.get(baseURL+url,function(response){
+		$("#customer_tbl > tbody").empty();
+		response.data.forEach(function(item){
+			var newTr = $(`<tr>
+				<td><input type="checkbox" value="`+item.id+`"></td>
+				<td>`+item.name+`</td>
+				<td>`+item.description+`</td>
+				<td>`+item.price+`</td>
+				<td>`+item.status+`</td>
+				<td>`+item.photo+`</td>
+				<td>`+item.categoryID+`</td>
+				<td>
+					<a class="btn_del" href="javascript:void(0)">删除</a>
+					<a class="btn_upd" href="javascript:void(0)">修改</a>
+				</td>
+			</tr>`);
+			$("#customer_tbl > tbody").append(newTr);
+		});
+	});
+}
+
+//为添加按钮添加事件处理函数
+var add = function (){
+	$("#btn_add").on("click",function(){
+		// 2. 获取有效值
+			var productname = $("input[name=productname]").val();
+			var description= $("input[name=description]").val();
+			var data = "name="+productname+"&description="+description;
+			var url = "/product/insertProduct ";
+			$.post(baseURL+url,data,function(result){
+				alert(result.message);
+				initData();
+			});
+
+			$("input[name = id]").val("");
+			$("input[name=productname]").val("");
+			$("input[name=description]").val("");
+	});
+}
+//// 为删除函数
+function del() {
+	// 为删除按钮绑定事件
+		$("#customer_tbl > tbody").on("click","a",function(){
+		switch(this.className){
+			case "btn_del":
+				var url = baseURL+"/product/deleteProductById";
+				//获取Id
+				var id = $(this).parents("tr").find("input").val();
+				var data = "id="+id;
+				//alert(data);
+				$.post(url,data,function(result){
+					alert(result.message);
+					initData();
+				});
+				break;
+			case "btn_upd":
+				
+				var id = $(this).parents("tr").find("input").val();
+				//获取表格中姓名和手机的值
+				var productname = event.target.parentNode.parentNode.children[1].innerText;
+				var description = event.target.parentNode.parentNode.children[2].innerText;
+				//将表格中姓名和手机的值添加到表单中
+				$("input[name=productname]").val(productname);
+				$("input[name=description]").val(description);
+				$("input[name=id]").val(id);
+				break;
+		}
+	});
+}
+//鼠标移动添加背景色函数
+function mouse(){
+	// 鼠标放上去当前行添加背景色
+	$("#customer_tbl > tbody").on("mouseover", "td",function(event){
+		var target = event.target;
+			target.parentNode.className = "current";
+	});
+	$("#customer_tbl > tbody").on("mouseout","td",function(event){
+		var target = event.target;
+		target.parentNode.className = "";	
+	});
+}
+//保存按钮功能函数
+function save(){
+	//保存数据
+	$(".forms input[type = submit]").on("click", function(event){
+			// 1. 校验有效性
+			// 2. 获取有效值
+			var productname = $("input[name=productname]").val();
+			var description = $("input[name=description]").val();
+			var id = $("input[name=id]").val();
+			// 3. 与后台进行交互
+			var data;
+			if(id){
+				data = "id="+id+"&name="+productname+"&description="+description
+			} else {
+				data = "name="+productname+"&description="+description
+			}
+			var url = "/product/updateProduct";
+			$.post(baseURL+url,data,function(result){
+				alert(result.message);
+				initData();
+			});
+			event.preventDefault();
+		});
+} 
+$(function(){
+	initData();
+	add();
+    del();
+	mouse();
+	save();
+})
+</script>
+<div class="product management">
+	产品管理
+	<div class="btns">
+		<div class="btn" id="btn_add">添加</div>
+		<div class="btn">批量导入</div>
+		<div class="btn">批量删除</div>
+	</div>
+	<div class="forms">
+		<form action="javascript:void(0)">
+			<input type="hidden" name="id">
+			<table>
+				<tbody>
+					<tr>
+						<td>产品名称</td>
+						<td><input type="text" name="productname"></td>
+						<td></td>
+						<td>产品描述</td>
+						<td><input type="text" name="description"></td>
+						<td></td>
+						<td><input type="submit" value="保存"></td>
+					</tr>
+				</tbody>
+			</table>
+		</form>
+	</div>
+	<table class="table" id="customer_tbl">
+		<thead>
+			<tr>
+				<th width="100px">产品编号</th>
+				<th width="100px">产品名称</th>
+				<th width="200px">产品描述</th>
+                <th>价钱</th>
+                <th>放置位置</th>
+                <th>照片</th>
+                <th>产品类型</th>
+				<th width="100px">操作</th>
+			</tr>
+		</thead>
+		<tbody>
+			
+		</tbody>
+	</table>
+
 </div>
