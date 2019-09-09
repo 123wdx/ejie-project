@@ -165,7 +165,39 @@
 
 			}
 		}
-		
+		//批量删除
+		$("#btn_delete").click(function(){
+			var chk_value =[]; 
+			$('input[type="checkbox"]:checked').each(function(){ 
+				chk_value.push($(this).val()); 
+				console.log(chk_value);
+			}); 
+			if(chk_value.length<=0){
+				alert("请选择要删除的数据！");
+			} else {
+				if(confirm("你确定删除吗？"+chk_value)){
+					$.ajax({
+				            url:"../DeleteNotice",
+				            type: "GET",
+				            data: {subBox:chk_value+""},
+				            success: function () {
+				            	 window.location.reload();
+				            },
+				            error: function(){
+				            	alert(chk_value);
+				            }
+				    });
+				}
+			}
+			var url = baseURL+"/orderLine/batchDeleteOrderLine";
+					var data = "ids="+chk_value;
+					$.post(url,data,function(response){
+						alert(response.message);
+						reloadData();
+					}) 
+		});
+	
+
 		//重载数据
 		function reloadData(){
 			//1.通过ajax获取后台数据
@@ -193,5 +225,6 @@
 		}
 		//调用重载方法
 		reloadData();
+
 
 </script>
